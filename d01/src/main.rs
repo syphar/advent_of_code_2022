@@ -1,5 +1,5 @@
 fn main() {
-    let lines: Vec<String> = std::fs::read_to_string(dbg!(std::env::args().nth(1).unwrap()))
+    let lines: Vec<String> = std::fs::read_to_string(std::env::args().nth(1).unwrap())
         .unwrap()
         .lines()
         .map(|l| l.to_string())
@@ -42,8 +42,7 @@ fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
 fn part_2<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
     let mut sums = get_sums(lines);
     sums.sort();
-    sums.reverse();
-    sums[0..3].iter().sum::<u64>()
+    sums.iter().rev().take(3).sum::<u64>()
 }
 
 #[cfg(test)]
