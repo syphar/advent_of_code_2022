@@ -22,7 +22,11 @@ fn get_sums<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> Vec<u64> {
         })
         .fold(Vec::new(), |mut sums, num| {
             if let Some(num) = num {
-                (*sums.last_mut().unwrap()) += num;
+                if sums.is_empty() {
+                    sums.push(num);
+                } else {
+                    (*sums.last_mut().unwrap()) += num;
+                }
             } else {
                 sums.push(0);
             }
