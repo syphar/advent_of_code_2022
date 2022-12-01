@@ -10,34 +10,24 @@ fn main() {
 }
 
 fn get_sums<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> Vec<u64> {
-    let mut sums: Vec<u64> = Vec::new();
+    lines
+        .map(|line| {
+            let line = line.as_ref().trim();
 
-    let mut current_sum: Option<u64> = None;
-
-    for line in lines {
-        let line = line.as_ref().trim();
-
-        if line.is_empty() {
-            if let Some(s) = current_sum {
-                sums.push(s);
-                current_sum = None;
+            if line.is_empty() {
+                None
             } else {
-                continue;
+                Some(line.parse::<u64>().unwrap())
             }
-        } else {
-            let value: u64 = line.parse().expect("could not parse number");
-
-            if let Some(s) = current_sum {
-                current_sum = Some(value + s);
+        })
+        .fold(Vec::new(), |mut sums, num| {
+            if let Some(num) = num {
+                (*sums.last_mut().unwrap()) += num;
             } else {
-                current_sum = Some(value);
+                sums.push(0);
             }
-        }
-    }
-    if let Some(s) = current_sum {
-        sums.push(s);
-    }
-    sums
+            sums
+        })
 }
 
 fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
