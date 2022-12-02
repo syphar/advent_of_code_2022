@@ -8,7 +8,7 @@ fn main() {
         .collect();
 
     println!("day 1: {}", part_1(lines.iter()));
-    // println!("day 2: {}", part_2(lines.iter()));
+    println!("day 2: {}", part_2(lines.iter()));
 }
 
 #[derive(PartialEq, Debug)]
@@ -77,8 +77,50 @@ fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
         .sum::<u64>()
 }
 
-fn part_2<T: AsRef<str>>(_lines: impl Iterator<Item = T>) -> u64 {
-    todo!();
+fn part_2<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
+    lines
+        .filter(|line| !line.as_ref().trim().is_empty())
+        .map(|line| {
+            let (other_char, my_char) = line
+                .as_ref()
+                .trim()
+                .split_once(' ')
+                .expect("could not split");
+
+            let other_move = match other_char {
+                "A" => RPC::Rock,
+                "B" => RPC::Paper,
+                "C" => RPC::Scissors,
+                _ => unreachable!("unknown input char"),
+            };
+
+            match my_char {
+                "X" => {
+                    // lose
+                    match other_move {
+                        RPC::Rock => RPC::Scissors,
+                        RPC::Scissors => RPC::Paper,
+                        RPC::Paper => RPC::Rock,
+                    }
+                    .points()
+                }
+                "Y" => {
+                    // draw
+                    3 + other_move.points()
+                }
+                "Z" => {
+                    // win
+                    6 + match other_move {
+                        RPC::Rock => RPC::Paper,
+                        RPC::Scissors => RPC::Rock,
+                        RPC::Paper => RPC::Scissors,
+                    }
+                    .points()
+                }
+                _ => unreachable!("unknown input char"),
+            }
+        })
+        .sum::<u64>()
 }
 
 #[cfg(test)]
@@ -95,8 +137,8 @@ mod tests {
         assert_eq!(part_1(TEST_INPUT.lines()), 15)
     }
 
-    // #[test]
-    // fn test_2() {
-    //     assert_eq!(part_2(TEST_INPUT.lines()), 45000)
-    // }
+    #[test]
+    fn test_2() {
+        assert_eq!(part_2(TEST_INPUT.lines()), 12)
+    }
 }
