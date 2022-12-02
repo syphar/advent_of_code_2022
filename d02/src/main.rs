@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, convert::Infallible, str::FromStr};
+use std::cmp::Ordering;
 
 fn main() {
     let lines: Vec<String> = std::fs::read_to_string(std::env::args().nth(1).unwrap())
@@ -42,33 +42,39 @@ impl PartialOrd for RPC {
     }
 }
 
-impl FromStr for RPC {
-    type Err = Infallible;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(match s {
-            "A" => RPC::Rock,
-            "B" => RPC::Paper,
-            "C" => RPC::Scissors,
-            "X" => RPC::Rock,
-            "Y" => RPC::Paper,
-            "Z" => RPC::Scissors,
+impl From<char> for RPC {
+    fn from(s: char) -> Self {
+        match s {
+            'A' => RPC::Rock,
+            'B' => RPC::Paper,
+            'C' => RPC::Scissors,
+            'X' => RPC::Rock,
+            'Y' => RPC::Paper,
+            'Z' => RPC::Scissors,
             _ => unreachable!("unknown input char"),
-        })
+        }
     }
 }
 
-fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
-    lines
-        .filter_map(|line| {
-            let line = line.as_ref().trim();
-            if line.is_empty() {
-                return None;
-            }
-            let (other_char, my_char) = line.split_once(' ').expect("could not split");
+fn split_lines<T: AsRef<str>>(
+    lines: impl Iterator<Item = T>,
+) -> impl Iterator<Item = (char, char)> {
+    lines.filter_map(|line| {
+        let line = line.as_ref().trim();
+        if line.is_empty() {
+            return None;
+        }
+        let (lhs, rhs) = line.split_once(' ').expect("could not split");
 
-            let other_move = RPC::from_str(other_char).unwrap();
-            let my_move = RPC::from_str(my_char).unwrap();
+        Some((lhs.chars().next().unwrap(), rhs.chars().next().unwrap()))
+    })
+}
+
+fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
+    split_lines(lines)
+        .map(|(other_char, my_char)| {
+            let other_move = RPC::from(other_char);
+            let my_move = RPC::from(my_char);
 
             let winning_points = if my_move == other_move {
                 3
@@ -78,24 +84,18 @@ fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
                 0
             };
 
-            Some(winning_points + my_move.points())
+            winning_points + my_move.points()
         })
         .sum::<u64>()
 }
 
 fn part_2<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
-    lines
-        .filter_map(|line| {
-            let line = line.as_ref().trim();
-            if line.is_empty() {
-                return None;
-            }
-            let (other_char, wanted_result) = line.split_once(' ').expect("could not split");
+    split_lines(lines)
+        .map(|(other_char, wanted_result)| {
+            let other_move = RPC::from(other_char);
 
-            let other_move = RPC::from_str(other_char).unwrap();
-
-            Some(match wanted_result {
-                "X" => {
+            match wanted_result {
+                'X' => {
                     // lose
                     match other_move {
                         RPC::Rock => RPC::Scissors,
@@ -104,11 +104,11 @@ fn part_2<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
                     }
                     .points()
                 }
-                "Y" => {
+                'Y' => {
                     // draw
                     3 + other_move.points()
                 }
-                "Z" => {
+                'Z' => {
                     // win
                     6 + match other_move {
                         RPC::Rock => RPC::Paper,
@@ -118,7 +118,7 @@ fn part_2<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
                     .points()
                 }
                 _ => unreachable!("unknown input char"),
-            })
+            }
         })
         .sum::<u64>()
 }
