@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-
 fn main() {
     let lines: Vec<String> = std::fs::read_to_string(std::env::args().nth(1).unwrap())
         .unwrap()
@@ -26,18 +24,50 @@ impl RPC {
             RPC::Scissors => 3,
         }
     }
+    fn iter() -> impl Iterator<Item = &'static RPC> {
+        static OPTIONS: [RPC; 3] = [RPC::Rock, RPC::Paper, RPC::Scissors];
+        OPTIONS.iter()
+    }
 }
 
-impl PartialOrd for RPC {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        match (self, other) {
-            (RPC::Rock, RPC::Scissors) => Some(Ordering::Greater),
-            (RPC::Scissors, RPC::Rock) => Some(Ordering::Less),
-            (RPC::Scissors, RPC::Paper) => Some(Ordering::Greater),
-            (RPC::Paper, RPC::Scissors) => Some(Ordering::Less),
-            (RPC::Paper, RPC::Rock) => Some(Ordering::Greater),
-            (RPC::Rock, RPC::Paper) => Some(Ordering::Less),
-            _ => unreachable!("unknown winner, got {:?} {:?}", self, other),
+#[derive(Debug, PartialEq)]
+enum Outcome {
+    Win,
+    Lose,
+    Draw,
+}
+impl Outcome {
+    fn points(&self) -> u64 {
+        match self {
+            Outcome::Win => 6,
+            Outcome::Lose => 0,
+            Outcome::Draw => 3,
+        }
+    }
+}
+impl From<char> for Outcome {
+    fn from(s: char) -> Self {
+        match s {
+            'X' => Outcome::Lose,
+            'Y' => Outcome::Draw,
+            'Z' => Outcome::Win,
+            _ => unreachable!("unknown input char"),
+        }
+    }
+}
+
+fn play(my_move: &RPC, other_move: &RPC) -> Outcome {
+    if my_move == other_move {
+        Outcome::Draw
+    } else {
+        match (my_move, other_move) {
+            (RPC::Rock, RPC::Scissors) => Outcome::Win,
+            (RPC::Scissors, RPC::Rock) => Outcome::Lose,
+            (RPC::Scissors, RPC::Paper) => Outcome::Win,
+            (RPC::Paper, RPC::Scissors) => Outcome::Lose,
+            (RPC::Paper, RPC::Rock) => Outcome::Win,
+            (RPC::Rock, RPC::Paper) => Outcome::Lose,
+            _ => unreachable!("unknown winner, got {:?} {:?}", my_move, other_move),
         }
     }
 }
@@ -76,49 +106,24 @@ fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
             let other_move = RPC::from(other_char);
             let my_move = RPC::from(my_char);
 
-            let winning_points = if my_move == other_move {
-                3
-            } else if my_move > other_move {
-                6
-            } else {
-                0
-            };
-
-            winning_points + my_move.points()
+            play(&my_move, &other_move).points() + my_move.points()
         })
         .sum::<u64>()
 }
 
 fn part_2<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
     split_lines(lines)
-        .map(|(other_char, wanted_result)| {
+        .map(|(other_char, wanted_outcome)| {
             let other_move = RPC::from(other_char);
 
-            match wanted_result {
-                'X' => {
-                    // lose
-                    match other_move {
-                        RPC::Rock => RPC::Scissors,
-                        RPC::Scissors => RPC::Paper,
-                        RPC::Paper => RPC::Rock,
-                    }
-                    .points()
+            let wanted_outcome = Outcome::from(wanted_outcome);
+
+            for my_potential_move in RPC::iter() {
+                if play(my_potential_move, &other_move) == wanted_outcome {
+                    return wanted_outcome.points() + my_potential_move.points();
                 }
-                'Y' => {
-                    // draw
-                    3 + other_move.points()
-                }
-                'Z' => {
-                    // win
-                    6 + match other_move {
-                        RPC::Rock => RPC::Paper,
-                        RPC::Scissors => RPC::Rock,
-                        RPC::Paper => RPC::Scissors,
-                    }
-                    .points()
-                }
-                _ => unreachable!("unknown input char"),
             }
+            unreachable!("no wanted move found");
         })
         .sum::<u64>()
 }
