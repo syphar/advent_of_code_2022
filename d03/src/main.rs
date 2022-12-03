@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::collections::HashSet;
 
 fn main() {
@@ -8,10 +9,10 @@ fn main() {
         .collect();
 
     println!("day 1: {}", part_1(parse_lines(lines.iter())));
-    // println!("day 2: {}", part_2(lines.iter()));
+    println!("day 2: {}", part_2(parse_lines(lines.iter())));
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 struct Item(char);
 
 impl Item {
@@ -28,6 +29,12 @@ impl Item {
 struct Rucksack {
     left: HashSet<Item>,
     right: HashSet<Item>,
+}
+
+impl Rucksack {
+    fn all_items(&self) -> HashSet<Item> {
+        self.left.iter().chain(self.right.iter()).cloned().collect()
+    }
 }
 
 fn parse_lines<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> impl Iterator<Item = Rucksack> {
@@ -63,9 +70,25 @@ fn part_1(rucksacks: impl Iterator<Item = Rucksack>) -> u64 {
         .sum::<u64>()
 }
 
-// fn part_2<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
-//     todo!();
-// }
+fn part_2(rucksacks: impl Iterator<Item = Rucksack>) -> u64 {
+    let mut r = 0;
+    for mut group in &rucksacks.chunks(3) {
+        let first = group.next().unwrap().all_items();
+        let second = group.next().unwrap().all_items();
+        let third = group.next().unwrap().all_items();
+
+        let shared_items: HashSet<Item> = first.intersection(&second).cloned().collect();
+
+        let mut really_shared_items = shared_items.intersection(&third);
+
+        let result = really_shared_items.next().unwrap();
+
+        debug_assert!(really_shared_items.next().is_none());
+
+        r += result.priority();
+    }
+    r
+}
 
 #[cfg(test)]
 mod tests {
@@ -83,6 +106,11 @@ mod tests {
     #[test]
     fn test_1() {
         assert_eq!(part_1(parse_lines(TEST_INPUT.lines())), 157)
+    }
+
+    #[test]
+    fn test_2() {
+        assert_eq!(part_2(parse_lines(TEST_INPUT.lines())), 70)
     }
 
     // #[test]
