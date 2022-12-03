@@ -71,23 +71,23 @@ fn part_1(rucksacks: impl Iterator<Item = Rucksack>) -> u64 {
 }
 
 fn part_2(rucksacks: impl Iterator<Item = Rucksack>) -> u64 {
-    let mut r = 0;
-    for mut group in &rucksacks.chunks(3) {
-        let first = group.next().unwrap().all_items();
-        let second = group.next().unwrap().all_items();
-        let third = group.next().unwrap().all_items();
+    rucksacks
+        .tuples::<(_, _, _)>()
+        .map(|(first, second, third)| {
+            let first = first.all_items();
+            let second = second.all_items();
+            let third = third.all_items();
 
-        let shared_items: HashSet<Item> = first.intersection(&second).cloned().collect();
+            let shared_items: HashSet<Item> = first.intersection(&second).cloned().collect();
 
-        let mut really_shared_items = shared_items.intersection(&third);
+            let mut really_shared_items = shared_items.intersection(&third);
 
-        let result = really_shared_items.next().unwrap();
+            let result = really_shared_items.next().unwrap();
 
-        debug_assert!(really_shared_items.next().is_none());
-
-        r += result.priority();
-    }
-    r
+            debug_assert!(really_shared_items.next().is_none());
+            result.priority()
+        })
+        .sum::<u64>()
 }
 
 #[cfg(test)]
