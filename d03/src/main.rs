@@ -113,11 +113,6 @@ mod tests {
         assert_eq!(part_2(parse_lines(TEST_INPUT.lines())), 70)
     }
 
-    // #[test]
-    // fn test_2() {
-    //     assert_eq!(part_2(TEST_INPUT.lines()), 12)
-    // }
-
     #[test_case('a', 1 ; "lower case a")]
     #[test_case('z', 26 ; "lower case z")]
     #[test_case('A', 27 ; "upper case A")]
