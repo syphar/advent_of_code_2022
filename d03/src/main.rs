@@ -78,13 +78,13 @@ fn part_2(rucksacks: impl Iterator<Item = Rucksack>) -> u64 {
             let second = second.all_items();
             let third = third.all_items();
 
-            let shared_items: HashSet<Item> = first.intersection(&second).cloned().collect();
-
-            let mut really_shared_items = shared_items.intersection(&third);
+            let potentially_shared_items: HashSet<Item> =
+                first.intersection(&second).cloned().collect();
+            let mut really_shared_items = potentially_shared_items.intersection(&third);
 
             let result = really_shared_items.next().unwrap();
-
             debug_assert!(really_shared_items.next().is_none());
+
             result.priority()
         })
         .sum::<u64>()
