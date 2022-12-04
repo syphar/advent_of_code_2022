@@ -1,8 +1,7 @@
 use nom::{
-    bytes::complete::{tag, take_while1},
-    character::complete::multispace0,
-    combinator::recognize,
-    combinator::{map, map_res},
+    bytes::complete::tag,
+    character::complete::{multispace0, u64},
+    combinator::map,
     multi::many1,
     sequence::{delimited, separated_pair},
     IResult, Parser,
@@ -18,19 +17,10 @@ fn main() {
 
 type Pair = (RangeInclusive<u64>, RangeInclusive<u64>);
 
-fn parse_number(input: &str) -> IResult<&str, u64> {
-    map_res(
-        recognize(take_while1(|ch: char| ch.is_numeric())),
-        |result: &str| result.parse::<u64>(),
-    )
-    .parse(input)
-}
-
 fn parse_range(input: &str) -> IResult<&str, RangeInclusive<u64>> {
-    map(
-        separated_pair(parse_number, tag("-"), parse_number),
-        |(start, end)| RangeInclusive::new(start, end),
-    )
+    map(separated_pair(u64, tag("-"), u64), |(start, end)| {
+        RangeInclusive::new(start, end)
+    })
     .parse(input)
 }
 
@@ -87,13 +77,6 @@ mod tests {
     #[test]
     fn test_2() {
         assert_eq!(part_2(parse_input(TEST_INPUT).into_iter()), 4)
-    }
-
-    #[test_case("123", 123)]
-    #[test_case("0", 0)]
-    fn test_parse_number(input: &str, output: u64) {
-        let (_, res) = parse_number(input).unwrap();
-        assert_eq!(res, output);
     }
 
     #[test_case("123-321", 123..=321)]
