@@ -43,7 +43,8 @@ fn parse_lines(input: &str) -> IResult<&str, Vec<Pair>> {
 }
 
 fn parse_input(input: &str) -> Vec<Pair> {
-    let (_, result) = parse_lines(input).unwrap();
+    let (remainder, result) = parse_lines(input).unwrap();
+    debug_assert!(remainder.is_empty());
     result
 }
 
