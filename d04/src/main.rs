@@ -1,18 +1,18 @@
 use nom::{
-    bytes::complete::tag,
-    character::complete::{multispace0, u64},
-    combinator::map,
-    multi::many1,
-    sequence::{delimited, separated_pair},
+    bytes::complete::tag, character::complete::u64, combinator::map, sequence::separated_pair,
     IResult, Parser,
 };
+use shared::parsers::parse_input;
 use std::ops::RangeInclusive;
 
 fn main() {
-    let input: String = std::fs::read_to_string(std::env::args().nth(1).unwrap()).unwrap();
+    let input = parse_input(
+        &std::fs::read_to_string(std::env::args().nth(1).unwrap()).unwrap(),
+        parse_pair,
+    );
 
-    println!("day 1: {}", part_1(parse_input(&input).into_iter()));
-    println!("day 2: {}", part_2(parse_input(&input).into_iter()));
+    println!("day 1: {}", part_1(input.iter().cloned()));
+    println!("day 2: {}", part_2(input.iter().cloned()));
 }
 
 type Pair = (RangeInclusive<u64>, RangeInclusive<u64>);
@@ -26,16 +26,6 @@ fn parse_range(input: &str) -> IResult<&str, RangeInclusive<u64>> {
 
 fn parse_pair(input: &str) -> IResult<&str, Pair> {
     separated_pair(parse_range, tag(","), parse_range)(input)
-}
-
-fn parse_lines(input: &str) -> IResult<&str, Vec<Pair>> {
-    many1(delimited(multispace0, parse_pair, multispace0))(input)
-}
-
-fn parse_input(input: &str) -> Vec<Pair> {
-    let (remainder, result) = parse_lines(input).unwrap();
-    debug_assert!(remainder.is_empty());
-    result
 }
 
 fn part_1(pairs: impl Iterator<Item = Pair>) -> u64 {
@@ -71,12 +61,12 @@ mod tests {
 
     #[test]
     fn test_1() {
-        assert_eq!(part_1(parse_input(TEST_INPUT).into_iter()), 2)
+        assert_eq!(part_1(parse_input(TEST_INPUT, parse_pair).into_iter()), 2)
     }
 
     #[test]
     fn test_2() {
-        assert_eq!(part_2(parse_input(TEST_INPUT).into_iter()), 4)
+        assert_eq!(part_2(parse_input(TEST_INPUT, parse_pair).into_iter()), 4)
     }
 
     #[test_case("123-321", 123..=321)]
@@ -90,35 +80,6 @@ mod tests {
     fn test_parse_pair() {
         let (_, res) = parse_pair("1-2,3-4").unwrap();
         assert_eq!(res, (1..=2, 3..=4));
-    }
-
-    #[test]
-    fn test_parse_lines_multi() {
-        let (_, res) = parse_lines("1-2,3-4\n5-6,7-8").unwrap();
-        assert_eq!(res, vec![(1..=2, 3..=4), (5..=6, 7..=8)])
-    }
-
-    #[test]
-    fn test_parse_lines_one() {
-        let (_, res) = parse_lines("1-2,3-4").unwrap();
-        assert_eq!(res, vec![(1..=2, 3..=4)])
-    }
-
-    #[test]
-    fn test_skip_leading_whitespace() {
-        let (_, res) = parse_lines(" \n    1-2,3-4").unwrap();
-        assert_eq!(res, vec![(1..=2, 3..=4)])
-    }
-
-    #[test]
-    fn test_skip_trailing_whitespace() {
-        let (_, res) = parse_lines("1-2,3-4 \n    ").unwrap();
-        assert_eq!(res, vec![(1..=2, 3..=4)])
-    }
-
-    #[test]
-    fn test_parse_lines_empty() {
-        assert!(parse_lines("").is_err());
     }
 
     #[test_case("123-"; "1")]

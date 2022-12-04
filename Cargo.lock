@@ -29,6 +29,7 @@ name = "d04"
 version = "0.1.0"
 dependencies = [
  "nom",
+ "shared",
  "test-case",
 ]
 
@@ -109,6 +110,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bbe448f377a7d6961e30f5955f9b8d106c3f5e449d493ee1b125c1d43c2b5179"
 dependencies = [
  "proc-macro2",
+]
+
+[[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "nom",
 ]
 
 [[package]]
