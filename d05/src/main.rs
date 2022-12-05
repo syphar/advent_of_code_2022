@@ -1,7 +1,7 @@
 use nom::{
     branch::alt,
     bytes::complete::tag,
-    character::complete::{alpha1, multispace0, one_of, u64 as parse_u64},
+    character::complete::{anychar, multispace0, one_of, u64 as parse_u64},
     combinator::{map, opt},
     multi::many1,
     sequence::{delimited, preceded, terminated, tuple},
@@ -46,9 +46,7 @@ fn parse_move(input: &str) -> IResult<&str, Move> {
 }
 fn parse_stack_element(input: &str) -> IResult<&str, Option<char>> {
     alt((
-        map(delimited(tag("["), alpha1, tag("]")), |capture: &str| {
-            Some(capture.chars().next().unwrap())
-        }),
+        map(delimited(tag("["), anychar, tag("]")), Some),
         map(tag("   "), |_| None),
     ))(input)
 }
