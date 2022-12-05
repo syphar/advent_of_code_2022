@@ -9,20 +9,20 @@ fn main() {
 
     let (stacks, moves) = parse_lines(lines.iter());
 
-    println!("day 1: {:?}", part_1(stacks, moves));
-    // println!("day 2: {}", part_2(parse_lines(lines.iter())));
+    println!("part 1: {:?}", part_1(stacks.clone(), moves.clone()));
+    println!("part 2: {:?}", part_2(stacks, moves));
 }
 
 type Stack = Vec<char>;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 struct Move {
     amount: usize,
     from: usize,
     to: usize,
 }
 
-fn parse_lines<T: AsRef<str>>(mut lines: impl Iterator<Item = T>) -> (Vec<Stack>, Vec<Move>) {
+fn parse_lines<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> (Vec<Stack>, Vec<Move>) {
     let mut stacks: Vec<Stack> = Vec::new();
     let mut moves: Vec<Move> = Vec::new();
 
@@ -52,7 +52,7 @@ fn parse_lines<T: AsRef<str>>(mut lines: impl Iterator<Item = T>) -> (Vec<Stack>
         if stacks_done {
             let captures = move_re.captures(line).unwrap();
             moves.push(Move {
-                amount: dbg!(captures.get(1).unwrap().as_str()).parse().unwrap(),
+                amount: captures.get(1).unwrap().as_str().parse().unwrap(),
                 from: captures.get(2).unwrap().as_str().parse().unwrap(),
                 to: captures.get(3).unwrap().as_str().parse().unwrap(),
             })
@@ -98,25 +98,19 @@ fn part_1(mut stacks: Vec<Stack>, moves: Vec<Move>) -> Vec<char> {
         .collect()
 }
 
-// fn part_2(rucksacks: impl Iterator<Item = Rucksack>) -> u64 {
-//     rucksacks
-//         .tuples::<(_, _, _)>()
-//         .map(|(first, second, third)| {
-//             let first = first.all_items();
-//             let second = second.all_items();
-//             let third = third.all_items();
+fn part_2(mut stacks: Vec<Stack>, moves: Vec<Move>) -> Vec<char> {
+    for Move { amount, from, to } in moves {
+        let to_remove = stacks[from - 1].len() - amount..stacks[from - 1].len();
+        let mut to_move: Vec<_> = stacks[from - 1].drain(to_remove).collect();
+        stacks[to - 1].append(&mut to_move);
+    }
 
-//             let potentially_shared_items: HashSet<Item> =
-//                 first.intersection(&second).cloned().collect();
-//             let mut really_shared_items = potentially_shared_items.intersection(&third);
-
-//             let result = really_shared_items.next().unwrap();
-//             debug_assert!(really_shared_items.next().is_none());
-
-//             result.priority()
-//         })
-//         .sum::<u64>()
-// }
+    stacks
+        .iter()
+        .map(|stack| stack.iter().rev().next().unwrap())
+        .copied()
+        .collect()
+}
 
 #[cfg(test)]
 mod tests {
@@ -175,8 +169,9 @@ move 1 from 1 to 2";
         assert_eq!(part_1(stacks, moves), vec!['C', 'M', 'Z']);
     }
 
-    // #[test]
-    // fn test_2() {
-    //     assert_eq!(part_2(parse_lines(TEST_INPUT.lines())), 70)
-    // }
+    #[test]
+    fn test_2() {
+        let (stacks, moves) = parse_lines(TEST_INPUT.lines());
+        assert_eq!(part_2(stacks, moves), vec!['M', 'C', 'D']);
+    }
 }
