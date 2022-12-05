@@ -1,4 +1,12 @@
-use regex::Regex;
+use nom::{
+    branch::alt,
+    bytes::complete::tag,
+    character::complete::{alpha1, multispace0, one_of, u64 as parse_u64},
+    combinator::{map, opt},
+    multi::many1,
+    sequence::{delimited, preceded, terminated, tuple},
+    IResult,
+};
 
 fn main() {
     let lines: Vec<String> = std::fs::read_to_string(std::env::args().nth(1).unwrap())
@@ -22,56 +30,59 @@ struct Move {
     to: usize,
 }
 
+fn parse_move(input: &str) -> IResult<&str, Move> {
+    map(
+        tuple((
+            preceded(tag("move "), parse_u64),
+            preceded(tag(" from "), parse_u64),
+            delimited(tag(" to "), parse_u64, multispace0),
+        )),
+        |(amount, from, to)| Move {
+            amount: amount as usize,
+            from: from as usize,
+            to: to as usize,
+        },
+    )(input)
+}
+fn parse_stack_element(input: &str) -> IResult<&str, Option<char>> {
+    alt((
+        map(delimited(tag("["), alpha1, tag("]")), |capture: &str| {
+            Some(capture.chars().next().unwrap())
+        }),
+        map(tag("   "), |_| None),
+    ))(input)
+}
+
+fn parse_stack_line(input: &str) -> IResult<&str, Vec<Option<char>>> {
+    many1(terminated(parse_stack_element, opt(one_of(" \n\r"))))(input)
+}
+
 fn parse_lines<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> (Vec<Stack>, Vec<Move>) {
     let mut stacks: Vec<Stack> = Vec::new();
     let mut moves: Vec<Move> = Vec::new();
-
-    let mut first_empty_lines_skipped = false;
-    let mut stacks_done = false;
-
-    let move_re = Regex::new(r"move (\d+) from (\d+) to (\d+)").unwrap();
 
     for line in lines {
         let line = line.as_ref();
 
         if line.trim().is_empty() {
-            if first_empty_lines_skipped {
-                // empty line in between, means we're done with stacks, and
-                // should do moves
-                stacks_done = true;
-                continue;
-            } else {
-                continue;
-            }
+            continue;
         }
 
-        first_empty_lines_skipped = true;
+        if let Ok((_, result)) = parse_move(line) {
+            moves.push(result);
+        }
 
-        let chars: Vec<_> = line.chars().collect();
+        if let Ok((_, result)) = parse_stack_line(line) {
+            while stacks.len() < result.len() {
+                stacks.push(Vec::new());
+            }
 
-        if stacks_done {
-            let captures = move_re.captures(line).unwrap();
-            moves.push(Move {
-                amount: captures.get(1).unwrap().as_str().parse().unwrap(),
-                from: captures.get(2).unwrap().as_str().parse().unwrap(),
-                to: captures.get(3).unwrap().as_str().parse().unwrap(),
-            })
-        } else {
-            for stack in 0..10 {
-                let idx = 1 + (stack * 4);
-                if chars.len() < idx - 1 {
-                    break;
-                }
-
-                if chars[idx - 1] == '[' && chars[idx + 1] == ']' {
-                    while stacks.len() < stack + 1 {
-                        stacks.push(Vec::new());
-                    }
-
-                    if stacks[stack].is_empty() {
-                        stacks[stack].push(chars[idx]);
+            for (i, el) in result.into_iter().enumerate() {
+                if let Some(ch) = el {
+                    if stacks[i].is_empty() {
+                        stacks[i].push(ch);
                     } else {
-                        stacks[stack].insert(0, chars[idx]);
+                        stacks[i].insert(0, ch);
                     }
                 }
             }
@@ -114,7 +125,9 @@ fn part_2(mut stacks: Vec<Stack>, moves: Vec<Move>) -> Vec<char> {
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
+    use test_case::test_case;
 
     static TEST_INPUT: &str = "
     [D]    
@@ -126,6 +139,31 @@ move 1 from 2 to 1
 move 3 from 1 to 3
 move 2 from 2 to 1
 move 1 from 1 to 2";
+
+    #[test_case("[D]", Some('D'))]
+    #[test_case("   ", None)]
+    fn test_parse_stack_element(input: &str, expected: Option<char>) {
+        let (remainder, result) = parse_stack_element(input).unwrap();
+        assert!(remainder.is_empty());
+        assert_eq!(result, expected);
+    }
+
+    #[test_case("move 1 from 2 to 3", Move {amount: 1, from: 2, to: 3})]
+    #[test_case("move 11 from 22 to 33", Move {amount: 11, from: 22, to: 33})]
+    fn test_parse_move(input: &str, expected: Move) {
+        let (remainder, result) = parse_move(input).unwrap();
+        assert!(remainder.is_empty());
+        assert_eq!(result, expected);
+    }
+
+    #[test_case("    [D]    \n", vec![None, Some('D'), None])]
+    #[test_case("[N] [C]    \n", vec![Some('N'), Some('C'), None])]
+    #[test_case("[Z] [M] [P]\n", vec![Some('Z'), Some('M'), Some('P')])]
+    fn test_parse_stack_line(input: &str, expected: Vec<Option<char>>) {
+        let (remainder, result) = parse_stack_line(input).unwrap();
+        assert!(remainder.is_empty());
+        assert_eq!(result, expected);
+    }
 
     #[test]
     fn test_read_input() {
