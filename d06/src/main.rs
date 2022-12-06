@@ -7,8 +7,8 @@ fn main() {
     println!("day 2: {}", part_2(&input));
 }
 
-fn find_marker<T: AsRef<str>>(input: T, marker_length: usize) -> usize {
-    let chars: Vec<_> = input.as_ref().chars().collect();
+fn find_marker(input: &str, marker_length: usize) -> usize {
+    let chars: Vec<_> = input.chars().collect();
     for (i, window) in chars.windows(marker_length).enumerate() {
         if window.iter().duplicates().next().is_none() {
             return i + marker_length;
@@ -17,11 +17,11 @@ fn find_marker<T: AsRef<str>>(input: T, marker_length: usize) -> usize {
     unreachable!();
 }
 
-fn part_1<T: AsRef<str>>(input: T) -> usize {
+fn part_1(input: &str) -> usize {
     find_marker(input, 4)
 }
 
-fn part_2<T: AsRef<str>>(input: T) -> usize {
+fn part_2(input: &str) -> usize {
     find_marker(input, 14)
 }
 
