@@ -26,9 +26,10 @@ fn load<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> (usize, Vec<usize>) {
         if let Some(command) = line.strip_prefix("$ ") {
             if let Some(folder) = command.strip_prefix("cd ") {
                 if folder == ".." {
-                    current_folder.pop();
+                    current_folder.pop().expect("can't decent");
                 } else if folder == "/" {
-                    current_folder.push("/".into());
+                    current_folder.clear();
+                    current_folder.push("".into());
                 } else {
                     current_folder.push(folder.into());
                 }
@@ -40,7 +41,7 @@ fn load<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> (usize, Vec<usize>) {
             all_file_sizes += size;
 
             for i in 0..current_folder.len() {
-                let f = current_folder[0..i + 1].join("");
+                let f = current_folder[0..i + 1].join("/");
 
                 folder_sizes_including_children
                     .entry(f)
