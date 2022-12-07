@@ -11,11 +11,11 @@ fn main() {
     println!("day 2: {}", part_2(lines.iter()));
 }
 
-fn load<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> (i64, HashMap<String, i64>) {
+fn load<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> (usize, Vec<usize>) {
     let mut current_folder: Vec<String> = Vec::new();
 
-    let mut all_file_size = 0i64;
-    let mut sizes: HashMap<String, i64> = HashMap::new();
+    let mut all_file_sizes = 0usize;
+    let mut folder_sizes_including_children: HashMap<String, usize> = HashMap::new();
 
     for line in lines {
         let line = line.as_ref().trim();
@@ -30,49 +30,54 @@ fn load<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> (i64, HashMap<String, 
                 } else if folder == "/" {
                     current_folder.push("/".into());
                 } else {
-                    current_folder.push(format!("{}/", folder));
+                    current_folder.push(folder.into());
                 }
             }
         } else if let Some(_dir) = line.strip_prefix("dir ") {
             // nothing for now
         } else if let Some((size, _name)) = line.split_once(' ') {
-            let size: i64 = size.parse::<i64>().expect("could not parse number");
-            all_file_size += size;
+            let size: usize = size.parse::<usize>().expect("could not parse number");
+            all_file_sizes += size;
 
             for i in 0..current_folder.len() {
                 let f = current_folder[0..i + 1].join("");
 
-                if let Some(v) = sizes.get_mut(&f) {
-                    *v += size;
-                } else {
-                    sizes.insert(f, size);
-                }
+                folder_sizes_including_children
+                    .entry(f)
+                    .and_modify(|v| *v += size)
+                    .or_insert(size);
             }
         } else {
             unreachable!("unparseable line: {}", line);
         }
     }
 
-    (all_file_size, sizes)
+    (
+        all_file_sizes,
+        folder_sizes_including_children.values().copied().collect(),
+    )
 }
 
-fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> i64 {
-    let (_all, sizes) = load(lines);
-    sizes.values().filter(|v| v <= &&100000).sum::<i64>()
+fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> usize {
+    let (_all, folder_sizes_including_children) = load(lines);
+    folder_sizes_including_children
+        .iter()
+        .filter(|&v| *v <= 100000)
+        .sum::<usize>()
 }
 
-fn part_2<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> i64 {
+fn part_2<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> usize {
     let disk_space = 70000000;
     let needed_space = 30000000;
 
-    let (all, sizes) = dbg!(load(lines));
-    let mut possible: Vec<_> = sizes
-        .values()
-        .filter(|size| (disk_space - all + *size) > needed_space)
-        .collect();
+    let (all_file_sizes, folder_sizes_including_children) = load(lines);
 
-    possible.sort();
-    *possible[0]
+    folder_sizes_including_children
+        .iter()
+        .filter(|size| (disk_space - all_file_sizes + *size) > needed_space)
+        .min()
+        .copied()
+        .expect("no minimum found")
 }
 
 #[cfg(test)]
