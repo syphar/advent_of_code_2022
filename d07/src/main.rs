@@ -8,14 +8,14 @@ fn main() {
         .collect();
 
     println!("day 1: {}", part_1(lines.iter()));
-    // println!("day 2: {}", part_2(lines.iter()));
+    println!("day 2: {}", part_2(lines.iter()));
 }
 
-fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> usize {
+fn load<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> (i64, HashMap<String, i64>) {
     let mut current_folder: Vec<String> = Vec::new();
 
-    let mut sizes: HashMap<String, usize> = HashMap::new();
-    // let mut files: HashMap<String, HashMap<String, usize>> = HashMap::new();
+    let mut all_file_size = 0i64;
+    let mut sizes: HashMap<String, i64> = HashMap::new();
 
     for line in lines {
         let line = line.as_ref().trim();
@@ -36,9 +36,8 @@ fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> usize {
         } else if let Some(_dir) = line.strip_prefix("dir ") {
             // nothing for now
         } else if let Some((size, _name)) = line.split_once(' ') {
-            let size: usize = size.parse::<usize>().expect("could not parse number");
-
-            // let current_folder = dbg!(current_folder.join(""));
+            let size: i64 = size.parse::<i64>().expect("could not parse number");
+            all_file_size += size;
 
             for i in 0..current_folder.len() {
                 let f = current_folder[0..i + 1].join("");
@@ -49,21 +48,31 @@ fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> usize {
                     sizes.insert(f, size);
                 }
             }
-
-            // files
-            //     .entry(current_folder)
-            //     .or_insert_with(HashMap::new)
-            //     .insert(name.to_string(), size);
         } else {
             unreachable!("unparseable line: {}", line);
         }
     }
 
-    sizes.values().filter(|v| v <= &&100000).sum::<usize>()
+    (all_file_size, sizes)
 }
 
-fn part_2<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> u64 {
-    todo!();
+fn part_1<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> i64 {
+    let (_all, sizes) = load(lines);
+    sizes.values().filter(|v| v <= &&100000).sum::<i64>()
+}
+
+fn part_2<T: AsRef<str>>(lines: impl Iterator<Item = T>) -> i64 {
+    let disk_space = 70000000;
+    let needed_space = 30000000;
+
+    let (all, sizes) = dbg!(load(lines));
+    let mut possible: Vec<_> = sizes
+        .values()
+        .filter(|size| (disk_space - all + *size) > needed_space)
+        .collect();
+
+    possible.sort();
+    *possible[0]
 }
 
 #[cfg(test)]
@@ -100,8 +109,8 @@ mod tests {
         assert_eq!(part_1(TEST_INPUT.lines()), 95437)
     }
 
-    // #[test]
-    // fn test_2() {
-    //     assert_eq!(part_2(TEST_INPUT.lines()), 12)
-    // }
+    #[test]
+    fn test_2() {
+        assert_eq!(part_2(TEST_INPUT.lines()), 24933642)
+    }
 }
