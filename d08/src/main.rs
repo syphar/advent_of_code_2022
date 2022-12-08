@@ -115,6 +115,6 @@ mod tests {
 
     #[test]
     fn test_2() {
-        // assert_eq!(part_2(TEST_INPUT.lines()), 12)
+        assert_eq!(part_1(TEST_INPUT), 8)
     }
 }
